@@ -22,7 +22,7 @@ tauri-plugin-shell = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
-reqwest = { version = "0.12", features = ["json", "stream"] }
+reqwest = { version = "0.12", features = ["json", "stream", "blocking"] }
 tokio-stream = "0.1"
 anyhow = "1"
 dirs = "5"
@@ -32,10 +32,16 @@ async-trait = "0.1"
 llama-cpp-2 = "0.1"
 hf-hub = { version = "0.4", features = ["tokio"] }
 
-# TTS (Kokoro text-to-speech + audio playback)
-kokoro-tts = "0.3"
-rodio = "0.20"
-bincode = "2"
+# TTS via Piper (fast, offline, cross-platform neural TTS)
+piper-rs = "0.1"
+rodio = "0.19"
+# Pin ort to the version piper-rs was built for (rc.11 has breaking changes)
+ort = "=2.0.0-rc.9"
+ort-sys = "=2.0.0-rc.9"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-updater = "2"

@@ -248,47 +248,64 @@ pub async fn download_model(app: AppHandle) -> Result<String, String> {
     Ok(model_path_str)
 }
 
+
+#[tauri::command]
+pub async fn speak_text(
+    text: String,
+    tts_state: State<'_, TtsState>,
+) -> Result<(), String> {
+    tracing::info!("speak_text called: \"{}\"", text);
+
+    // Clone Arc handle out of the lock so we can run synthesis on a blocking thread
+    let engine: std::sync::Arc<crate::tts::PiperTTSEngine> = {
+        let guard = tts_state.0.lock().map_err(|e| format!("TTS lock error: {}", e))?;
+        match guard.as_ref() {
+            Some(e) => std::sync::Arc::clone(e),
+            None => return Err("TTS not initialized. Download a voice model first.".into()),
+        }
+    };
+
+    // Piper synthesis is synchronous (uses rayon internally) — run on a blocking thread
+    tokio::task::spawn_blocking(move || engine.speak(&text))
+        .await
+        .map_err(|e| format!("TTS task error: {}", e))?
+        .map_err(|e| format!("TTS error: {}", e))?;
+    tracing::info!("speak_text completed successfully");
+    Ok(())
+}
+
+#[tauri::command]
+pub fn is_tts_initialized(tts_state: State<'_, TtsState>) -> bool {
+    tts_state
+        .0
+        .lock()
+        .map(|t| t.is_some())
+        .unwrap_or(false)
+}
+
 #[tauri::command]
 pub async fn download_tts_model(app: AppHandle) -> Result<(), String> {
-    use hf_hub::api::sync::ApiBuilder;
-
     let _ = app.emit(
         "model-download-progress",
         DownloadProgressEvent {
             percent: 0.0,
-            status: "Starting TTS model download...".into(),
+            status: "Starting Piper voice download...".into(),
         },
     );
 
     let data_dir =
         Config::data_dir().map_err(|e| format!("Failed to get data directory: {}", e))?;
 
-    let api = ApiBuilder::new()
-        .with_cache_dir(data_dir.clone())
-        .build()
-        .map_err(|e| format!("Failed to create HF API: {}", e))?;
-
     let _ = app.emit(
         "model-download-progress",
         DownloadProgressEvent {
             percent: 10.0,
-            status: "Downloading Kokoro TTS model...".into(),
+            status: "Downloading voice model (~60MB)...".into(),
         },
     );
 
-    // Download Kokoro ONNX model + voices from onnx-community (https://huggingface.co/onnx-community/Kokoro-82M-ONNX)
-    let api_clone = api.clone();
-    tokio::task::spawn_blocking(move || -> Result<(), String> {
-        let repo = api_clone.model("onnx-community/Kokoro-82M-ONNX".to_string());
-        // Download ONNX model (use quantized for smaller size ~92MB)
-        repo.get("onnx/model_quantized.onnx")
-            .map_err(|e| format!("Failed to download ONNX model: {}", e))?;
-        // Download af.bin voice (American Female - we use as af_heart)
-        repo.get("voices/af.bin")
-            .map_err(|e| format!("Failed to download voice: {}", e))?;
-        // Build combined voices file in kokoro-tts format from the single downloaded voice
-        crate::tts::build_voices_file(&data_dir)?;
-        Ok(())
+    let config_path = tokio::task::spawn_blocking(move || {
+        crate::tts::download_voice("en_US-amy-medium", &data_dir)
     })
     .await
     .map_err(|e| format!("Download task failed: {}", e))?
@@ -297,55 +314,36 @@ pub async fn download_tts_model(app: AppHandle) -> Result<(), String> {
     let _ = app.emit(
         "model-download-progress",
         DownloadProgressEvent {
-            percent: 100.0,
-            status: "TTS model download complete!".into(),
+            percent: 90.0,
+            status: "Initializing TTS engine...".into(),
         },
     );
 
-    Ok(())
-}
-
-#[tauri::command]
-pub async fn speak_text(
-    text: String,
-    tts_state: State<'_, TtsState>,
-) -> Result<(), String> {
-    // Clone the engine out of the lock so we don't hold it across await
-    let engine = {
-        let tts = tts_state.0.lock().map_err(|e| format!("TTS lock error: {}", e))?;
-        tts.clone()
-    };
-    
-    if let Some(engine) = engine {
-        tokio::task::spawn_blocking(move || {
-            engine.speak(&text)
-        })
-        .await
-        .map_err(|e| format!("TTS task error: {}", e))?
-        .map_err(|e| format!("TTS error: {}", e))?;
-        Ok(())
-    } else {
-        Err("TTS not initialized. Please download the TTS model first.".into())
-    }
-}
-
-#[tauri::command]
-pub async fn init_tts(tts_state: State<'_, TtsState>) -> Result<(), String> {
-    use crate::tts::KokoroTTSEngine;
-    
-    let data_dir =
-        Config::data_dir().map_err(|e| format!("Failed to get data directory: {}", e))?;
-    
+    // Initialize the engine
     let engine = tokio::task::spawn_blocking(move || {
-        KokoroTTSEngine::new(&data_dir)
+        crate::tts::PiperTTSEngine::new(&config_path, None)
     })
     .await
     .map_err(|e| format!("TTS init task error: {}", e))?
     .map_err(|e| format!("Failed to initialize TTS: {}", e))?;
-    
-    let mut tts = tts_state.0.lock().map_err(|e| format!("TTS lock error: {}", e))?;
-    *tts = Some(engine);
-    
+
+    // Store in state
+    if let Some(tts_state) = app.try_state::<TtsState>() {
+        let mut guard = tts_state.0.lock().map_err(|e| format!("TTS lock error: {}", e))?;
+        *guard = Some(std::sync::Arc::new(engine));
+    } else {
+        return Err("TTS state not found in app".into());
+    }
+
+    let _ = app.emit(
+        "model-download-progress",
+        DownloadProgressEvent {
+            percent: 100.0,
+            status: "Voice model ready!".into(),
+        },
+    );
+
+    tracing::info!("Piper TTS model downloaded and initialized");
     Ok(())
 }
 
@@ -370,34 +368,4 @@ pub fn open_settings_window(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-pub fn open_chat_window(app: AppHandle) -> Result<(), String> {
-    // Check if chat window already exists
-    if let Some(window) = app.get_webview_window("chat") {
-        let _ = window.show();
-        let _ = window.set_focus();
-        return Ok(());
-    }
-    
-    // Get clippy window position
-    let clippy_window = app
-        .get_webview_window("clippy")
-        .ok_or_else(|| "Clippy window not found".to_string())?;
-    
-    let position = clippy_window
-        .outer_position()
-        .map_err(|e| format!("Failed to get clippy position: {}", e))?;
-    
-    // Create chat window positioned next to Clippy
-    let _chat_window = WebviewWindowBuilder::new(&app, "chat", WebviewUrl::App("chat.html".into()))
-        .title("Chat with Clippy")
-        .inner_size(350.0, 500.0)
-        .position(position.x as f64 + 220.0, position.y as f64)
-        .resizable(true)
-        .decorations(true)
-        .always_on_top(true)
-        .build()
-        .map_err(|e| format!("Failed to create chat window: {}", e))?;
-    
-    Ok(())
-}
+// open_chat_window removed — chat is now an inline bubble in the main window

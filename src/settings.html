@@ -92,24 +92,18 @@
 
         <!-- TTS Section -->
         <div class="section">
-            <div class="section-title">Text-to-Speech</div>
+            <div class="section-title">Text-to-Speech (Piper)</div>
             <div class="field checkbox-field">
                 <input type="checkbox" id="tts-enabled">
                 <label for="tts-enabled">Enable TTS (Clippy speaks responses)</label>
             </div>
             <div id="tts-options" style="display:none;">
                 <div class="field">
-                    <label for="tts-voice">Voice</label>
-                    <select id="tts-voice">
-                        <option value="af_heart">Heart (Female, American)</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <button id="download-tts-btn" class="btn action-btn">Download TTS Model (~100MB)</button>
+                    <button id="download-tts-btn" class="btn action-btn">Download Voice Model (~60MB)</button>
                     <div id="tts-download-status" class="progress-status"></div>
                 </div>
                 <div class="field">
-                    <button id="init-tts-btn" class="btn action-btn" style="display:none;">Initialize TTS Engine</button>
+                    <button id="test-tts-btn" class="btn action-btn">Test Voice</button>
                 </div>
             </div>
         </div>

@@ -18,10 +18,9 @@ const modelDownloadStatus = document.getElementById('model-download-status') as 
 const tempSlider = document.getElementById('temperature') as HTMLInputElement;
 const tempValue = document.getElementById('temp-value') as HTMLSpanElement;
 const ttsEnabledCheckbox = document.getElementById('tts-enabled') as HTMLInputElement;
-const ttsVoiceSelect = document.getElementById('tts-voice') as HTMLSelectElement;
 const downloadTtsBtn = document.getElementById('download-tts-btn') as HTMLButtonElement;
 const ttsDownloadStatus = document.getElementById('tts-download-status') as HTMLDivElement;
-const initTtsBtn = document.getElementById('init-tts-btn') as HTMLButtonElement;
+const testTtsBtn = document.getElementById('test-tts-btn') as HTMLButtonElement;
 const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
 const cancelBtn = document.getElementById('cancel-btn') as HTMLButtonElement;
 const statusEl = document.getElementById('status') as HTMLDivElement;
@@ -42,24 +41,17 @@ const PROVIDER_DEFAULTS: Record<string, { url: string; model: string }> = {
 // Show/hide sections based on provider
 function updateProviderSections() {
   const provider = providerSelect.value;
-
   openaiSection.style.display = provider === 'OpenAI' ? '' : 'none';
   localApiSection.style.display = ['LMStudio', 'Ollama', 'CustomAPI'].includes(provider) ? '' : 'none';
   builtinSection.style.display = provider === 'BuiltIn' ? '' : 'none';
 
-  // Pre-fill defaults when switching provider
   if (PROVIDER_DEFAULTS[provider]) {
-    if (!customApiUrl.value) {
-      customApiUrl.value = PROVIDER_DEFAULTS[provider].url;
-    }
-    if (!customModel.value) {
-      customModel.value = PROVIDER_DEFAULTS[provider].model;
-    }
+    if (!customApiUrl.value) customApiUrl.value = PROVIDER_DEFAULTS[provider].url;
+    if (!customModel.value) customModel.value = PROVIDER_DEFAULTS[provider].model;
   }
 }
 
 providerSelect.addEventListener('change', () => {
-  // Clear local API fields when switching
   customApiUrl.value = '';
   customApiKey.value = '';
   customModel.value = '';
@@ -121,46 +113,46 @@ downloadModelBtn.addEventListener('click', async () => {
   }
 });
 
-// Download TTS model
+// Download TTS voice model (Piper)
 downloadTtsBtn.addEventListener('click', async () => {
   downloadTtsBtn.disabled = true;
-  ttsDownloadStatus.textContent = 'Starting download...';
+  ttsDownloadStatus.textContent = 'Starting voice download...';
   ttsDownloadStatus.style.display = 'block';
 
   try {
     await invoke('download_tts_model');
-    ttsDownloadStatus.textContent = 'Download complete! Click "Initialize TTS Engine" to activate.';
+    ttsDownloadStatus.textContent = 'Voice model ready!';
     ttsDownloadStatus.className = 'progress-status success';
-    initTtsBtn.style.display = '';
+    downloadTtsBtn.textContent = 'Voice Downloaded';
+    downloadTtsBtn.disabled = true;
   } catch (error) {
     ttsDownloadStatus.textContent = `Error: ${error}`;
     ttsDownloadStatus.className = 'progress-status error';
-  } finally {
     downloadTtsBtn.disabled = false;
   }
 });
 
-// Initialize TTS engine
-initTtsBtn.addEventListener('click', async () => {
-  initTtsBtn.disabled = true;
-  ttsDownloadStatus.textContent = 'Initializing TTS engine...';
+// Test TTS voice
+testTtsBtn.addEventListener('click', async () => {
+  testTtsBtn.disabled = true;
+  ttsDownloadStatus.textContent = 'Speaking...';
+  ttsDownloadStatus.style.display = 'block';
 
   try {
-    await invoke('init_tts');
-    ttsDownloadStatus.textContent = 'TTS engine ready!';
+    await invoke('speak_text', { text: "Hi! I'm Clippy, your helpful assistant!" });
+    ttsDownloadStatus.textContent = 'Voice test complete!';
     ttsDownloadStatus.className = 'progress-status success';
   } catch (error) {
     ttsDownloadStatus.textContent = `Error: ${error}`;
     ttsDownloadStatus.className = 'progress-status error';
   } finally {
-    initTtsBtn.disabled = false;
+    testTtsBtn.disabled = false;
   }
 });
 
 // Listen for download progress events
 listen('model-download-progress', (event: any) => {
   const { percent, status } = event.payload;
-  // Update whichever download status is currently visible
   if (modelDownloadStatus.style.display !== 'none') {
     modelDownloadStatus.textContent = `${status} (${Math.round(percent)}%)`;
   }
@@ -184,12 +176,23 @@ async function loadConfig() {
     tempSlider.value = String(config.temperature ?? 0.9);
     tempValue.textContent = tempSlider.value;
     ttsEnabledCheckbox.checked = config.tts_enabled || false;
-    if (config.tts_voice) {
-      ttsVoiceSelect.value = config.tts_voice;
-    }
 
     updateProviderSections();
     ttsOptions.style.display = ttsEnabledCheckbox.checked ? '' : 'none';
+
+    // Check if TTS is already initialized (voice already downloaded)
+    try {
+      const initialized = await invoke('is_tts_initialized') as boolean;
+      if (initialized) {
+        ttsDownloadStatus.textContent = 'Voice model ready!';
+        ttsDownloadStatus.className = 'progress-status success';
+        ttsDownloadStatus.style.display = 'block';
+        downloadTtsBtn.textContent = 'Voice Downloaded';
+        downloadTtsBtn.disabled = true;
+      }
+    } catch {
+      // Ignore
+    }
   } catch (error) {
     showStatus('Failed to load settings', 'error');
   }
@@ -199,7 +202,6 @@ async function loadConfig() {
 saveBtn.addEventListener('click', async () => {
   const provider = providerSelect.value;
 
-  // Validate based on provider
   if (provider === 'OpenAI' && !apiKeyInput.value.trim()) {
     showStatus('Please enter an OpenAI API key', 'error');
     return;
@@ -224,12 +226,11 @@ saveBtn.addEventListener('click', async () => {
       builtin_model_path: builtinModelPath.value.trim() || null,
       temperature: parseFloat(tempSlider.value),
       tts_enabled: ttsEnabledCheckbox.checked,
-      tts_voice: ttsVoiceSelect.value || null,
+      tts_voice: null,
     };
     await invoke('save_config', { config });
     showStatus('Settings saved! Clippy is ready to chat.', 'success');
 
-    // Close window after a brief delay
     setTimeout(async () => {
       try {
         await getCurrentWindow().close();

@@ -16,8 +16,8 @@
         "title": "Clippy",
         "label": "clippy",
         "url": "index.html",
-        "width": 130,
-        "height": 100,
+        "width": 420,
+        "height": 600,
         "resizable": false,
         "fullscreen": false,
         "decorations": false,
@@ -26,8 +26,8 @@
         "skipTaskbar": false,
         "visible": true,
         "center": false,
-        "x": 1200,
-        "y": 600
+        "x": 1000,
+        "y": 100
       }
     ],
     "security": {
