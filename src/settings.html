@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clippy Settings</title>
+    <link rel="stylesheet" href="styles/settings.css">
+</head>
+<body>
+    <div class="settings-container">
+        <h2>Clippy Settings</h2>
+        
+        <!-- Provider Selection -->
+        <div class="section">
+            <div class="section-title">LLM Provider</div>
+            <div class="field">
+                <label for="provider">Provider</label>
+                <select id="provider">
+                    <option value="OpenAI">OpenAI</option>
+                    <option value="LMStudio">LM Studio</option>
+                    <option value="Ollama">Ollama</option>
+                    <option value="CustomAPI">Custom API</option>
+                    <option value="BuiltIn">Built-in Local (Gemma 3 1B)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- OpenAI Section -->
+        <div id="openai-section" class="section">
+            <div class="field">
+                <label for="api-key">OpenAI API Key</label>
+                <div class="input-with-btn">
+                    <input type="password" id="api-key" placeholder="sk-..." autocomplete="off">
+                    <button id="toggle-key" class="icon-btn" title="Show/hide key">Show</button>
+                </div>
+            </div>
+            <div class="field">
+                <label for="model">Model</label>
+                <select id="model">
+                    <option value="gpt-4">GPT-4</option>
+                    <option value="gpt-4o">GPT-4o</option>
+                    <option value="gpt-4o-mini">GPT-4o-mini</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Local API Section (LMStudio / Ollama / Custom) -->
+        <div id="localapi-section" class="section" style="display:none;">
+            <div class="field">
+                <label for="custom-api-url">API URL</label>
+                <input type="text" id="custom-api-url" placeholder="http://localhost:1234/v1" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="custom-api-key">API Key (optional)</label>
+                <input type="text" id="custom-api-key" placeholder="Leave empty for local servers" autocomplete="off">
+            </div>
+            <div class="field">
+                <label for="custom-model">Model Name</label>
+                <input type="text" id="custom-model" placeholder="e.g. llama3.2, default" autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Built-in Local Section -->
+        <div id="builtin-section" class="section" style="display:none;">
+            <div class="field">
+                <label for="builtin-model-path">Model File Path (.gguf)</label>
+                <div class="input-with-btn">
+                    <input type="text" id="builtin-model-path" placeholder="Path to .gguf model file" readonly>
+                    <button id="browse-model-btn" class="icon-btn">Browse</button>
+                </div>
+            </div>
+            <div class="field">
+                <button id="download-model-btn" class="btn action-btn">Download Gemma 3 1B (~670MB)</button>
+                <div id="model-download-status" class="progress-status"></div>
+            </div>
+        </div>
+
+        <!-- Common Settings -->
+        <div class="section">
+            <div class="section-title">General</div>
+            <div class="field">
+                <label for="temperature">Personality (Temperature: <span id="temp-value">0.9</span>)</label>
+                <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.9">
+                <div class="range-labels">
+                    <span>Serious</span>
+                    <span>Balanced</span>
+                    <span>Chaotic</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TTS Section -->
+        <div class="section">
+            <div class="section-title">Text-to-Speech</div>
+            <div class="field checkbox-field">
+                <input type="checkbox" id="tts-enabled">
+                <label for="tts-enabled">Enable TTS (Clippy speaks responses)</label>
+            </div>
+            <div id="tts-options" style="display:none;">
+                <div class="field">
+                    <label for="tts-voice">Voice</label>
+                    <select id="tts-voice">
+                        <option value="af_heart">Heart (Female, American)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <button id="download-tts-btn" class="btn action-btn">Download TTS Model (~100MB)</button>
+                    <div id="tts-download-status" class="progress-status"></div>
+                </div>
+                <div class="field">
+                    <button id="init-tts-btn" class="btn action-btn" style="display:none;">Initialize TTS Engine</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button id="save-btn" class="btn primary">Save</button>
+            <button id="cancel-btn" class="btn">Cancel</button>
+        </div>
+
+        <div id="status" class="status"></div>
+    </div>
+    <script type="module" src="/scripts/settings.ts"></script>
+</body>
+</html>

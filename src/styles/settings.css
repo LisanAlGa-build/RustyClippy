@@ -1,0 +1,240 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 20px;
+}
+
+.settings-container {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+h2 {
+    margin-bottom: 20px;
+    color: #ffffff;
+    font-size: 18px;
+}
+
+/* Sections */
+.section {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #2a2a4a;
+}
+
+.section:last-of-type {
+    border-bottom: none;
+}
+
+.section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #647ee6;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.field {
+    margin-bottom: 12px;
+    position: relative;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #a0a0b0;
+    font-weight: 500;
+}
+
+input[type="password"],
+input[type="text"],
+select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #16213e;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    color: #e0e0e0;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+input:focus, select:focus {
+    border-color: #647ee6;
+}
+
+input[readonly] {
+    opacity: 0.7;
+    cursor: default;
+}
+
+/* Input with inline button */
+.input-with-btn {
+    display: flex;
+    gap: 6px;
+}
+
+.input-with-btn input {
+    flex: 1;
+}
+
+.icon-btn {
+    padding: 8px 12px;
+    background: #16213e;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    color: #a0a0b0;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.icon-btn:hover {
+    background: #1f2f5a;
+    color: #e0e0e0;
+}
+
+/* Checkbox field */
+.checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-field input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #647ee6;
+    cursor: pointer;
+}
+
+.checkbox-field label {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+input[type="range"] {
+    width: 100%;
+    margin: 4px 0;
+    accent-color: #647ee6;
+}
+
+.range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* Buttons */
+.buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: 1px solid #2a2a4a;
+    border-radius: 8px;
+    background: #16213e;
+    color: #e0e0e0;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    background: #1f2f5a;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn.primary {
+    background: #647ee6;
+    border-color: #647ee6;
+    color: white;
+    font-weight: 600;
+}
+
+.btn.primary:hover {
+    background: #5268c7;
+}
+
+.btn.action-btn {
+    flex: unset;
+    width: 100%;
+    background: #1f2f5a;
+    border-color: #3a4a7a;
+    font-size: 13px;
+    padding: 8px 14px;
+}
+
+.btn.action-btn:hover {
+    background: #2a3f6a;
+}
+
+/* Progress/status indicators */
+.progress-status {
+    display: none;
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #a0a0b0;
+    background: rgba(100, 126, 230, 0.1);
+    border: 1px solid rgba(100, 126, 230, 0.2);
+}
+
+.progress-status.success {
+    display: block;
+    background: rgba(76, 175, 80, 0.15);
+    color: #81c784;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.progress-status.error {
+    display: block;
+    background: rgba(244, 67, 54, 0.15);
+    color: #ef9a9a;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+/* Status bar */
+.status {
+    margin-top: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: none;
+}
+
+.status.success {
+    display: block;
+    background: rgba(76, 175, 80, 0.15);
+    color: #81c784;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.status.error {
+    display: block;
+    background: rgba(244, 67, 54, 0.15);
+    color: #ef9a9a;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+}

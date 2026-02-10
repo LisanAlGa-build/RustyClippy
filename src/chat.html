@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Clippy</title>
+    <link rel="stylesheet" href="styles/chat.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>💬 Chat with Clippy</h2>
+        </div>
+        <div id="messages" class="messages-container"></div>
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="message-input" 
+                placeholder="Ask Clippy anything..."
+                autocomplete="off"
+            />
+            <button id="send-button">Send</button>
+            <button id="clear-button" class="secondary">Clear</button>
+        </div>
+    </div>
+    <script type="module" src="/scripts/chat.ts"></script>
+</body>
+</html>
