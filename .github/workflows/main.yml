@@ -16,7 +16,7 @@ jobs:
         include:
           - platform: 'macos-latest' # Apple Silicon
             args: '--target aarch64-apple-darwin'
-          - platform: 'macos-13' # Intel Mac
+          - platform: 'macos-15-intel' # Intel Mac
             args: '--target x86_64-apple-darwin'
           - platform: 'ubuntu-22.04'
             args: ''
@@ -26,12 +26,14 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev
 
       - name: setup node
         uses: actions/setup-node@v4
@@ -49,6 +51,7 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MACOSX_DEPLOYMENT_TARGET: '10.15'
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Rusty Clippy ${{ github.ref_name }}'
