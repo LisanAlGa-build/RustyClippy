@@ -46,12 +46,11 @@ Rusty Clippy is an AI-powered resurrection of the beloved (and sometimes annoyin
    
    First run will take several minutes as Rust compiles all dependencies.
 
-5. **Configure your API key**
-   - Once the app starts, Clippy will appear on your screen
-   - Click on the Clippy system tray icon in your menu bar
-   - Select "Settings"
-   - Enter your OpenAI API key
-   - Click OK to save
+5. **Configure AI Provider (Optional)**
+   - Clippy uses a local LLM by default, so no configuration is needed to start.
+   - To use other providers (like OpenAI):
+     - Click on the Clippy system tray icon
+     - Select "Settings" to configure your provider and API keys
 
 ## Building for Production
 
@@ -79,7 +78,7 @@ On macOS, you'll find `Rusty Clippy.app` in the `dmg` folder.
 ├─────────────────┬───────────────────┤
 │  Rust Backend   │  Web Frontend     │
 │                 │                   │
-│  • OpenAI API   │  • Sprite Engine  │
+│  • LLM Manager  │  • Sprite Engine  │
 │  • Config Store │  • Chat UI        │
 │  • IPC Commands │  • TypeScript     │
 │  • Streaming    │  • Animations     │
@@ -91,7 +90,7 @@ On macOS, you'll find `Rusty Clippy.app` in the `dmg` folder.
 - **Backend**: Rust, Tokio (async runtime), Reqwest (HTTP client)
 - **Frontend**: TypeScript, Vanilla JS (no frameworks)
 - **Desktop Framework**: Tauri 2.0
-- **AI**: OpenAI GPT-4 (configurable)
+- **AI**: Local LLM (default), OpenAI, and other providers
 - **Assets**: Original Clippy sprites from [clippy.js](https://github.com/clippyjs/clippy.js)
 
 ## Project Structure
@@ -126,8 +125,8 @@ Config file location: `~/.config/rusty-clippy/config.json`
 
 ```json
 {
-  "openai_api_key": "sk-...",
-  "openai_model": "gpt-4",
+  "provider": "local",
+  "openai_api_key": null,
   "temperature": 0.9
 }
 ```

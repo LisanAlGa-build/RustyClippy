@@ -14,11 +14,11 @@
    
    **Note**: The first run will take 3-5 minutes to compile Rust dependencies. Subsequent runs will be much faster.
 
-3. **Configure OpenAI API Key**:
-   - Look for the Clippy icon in your system tray (menu bar on macOS)
-   - Click the tray icon → Select "Settings"
-   - Enter your OpenAI API key
-   - Click OK
+3. **Configure AI Provider (Optional)**:
+   - By default, Clippy uses a local LLM so you can start chatting immediately.
+   - To use OpenAI or other providers:
+     - Click the tray icon → Select "Settings"
+     - Choose your provider and enter API keys if required
 
 4. **Start chatting**:
    - Click on the floating Clippy character
@@ -28,7 +28,7 @@
 ## Features
 
 - **Floating Clippy**: Drag him anywhere on your screen
-- **Chat Interface**: Ask Clippy anything, powered by GPT-4
+- **Chat Interface**: Ask Clippy anything, powered by Local LLM or cloud providers
 - **Animations**: Watch Clippy animate while idle and when responding
 - **System Tray**: Easy access to settings and controls
 
@@ -39,8 +39,8 @@
 - Try clicking "Show Clippy" from the tray menu
 
 ### "API key not set" error
-- Make sure you've configured your OpenAI API key in Settings
-- The key should start with `sk-`
+- This only applies if you have selected a cloud provider like OpenAI.
+- Make sure you've configured your API key in Settings.
 
 ### Compilation errors
 - Make sure you have Rust installed: `rustc --version`
@@ -56,6 +56,6 @@
 - Customize Clippy's personality in `src-tauri/src/personality.rs`
 - Adjust chat window styling in `src/styles/chat.css`
 - Add more animations (check `src/assets/agents/Clippy/map.json` for available animations)
-- Change the OpenAI model in Settings (default is GPT-4)
+- Change the AI provider or model in Settings
 
 Enjoy your AI-powered Clippy! 📎
