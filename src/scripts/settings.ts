@@ -31,6 +31,75 @@ const localApiSection = document.getElementById('localapi-section') as HTMLDivEl
 const builtinSection = document.getElementById('builtin-section') as HTMLDivElement;
 const ttsOptions = document.getElementById('tts-options') as HTMLDivElement;
 
+// Voice selection element (created dynamically)
+let voiceSelect: HTMLSelectElement;
+
+async function checkVoiceStatus() {
+  if (!voiceSelect) return;
+  const voice = voiceSelect.value;
+  
+  try {
+    const downloaded = await invoke('is_voice_downloaded', { voice }) as boolean;
+    if (downloaded) {
+      ttsDownloadStatus.textContent = 'Voice ready';
+      ttsDownloadStatus.className = 'progress-status success';
+      ttsDownloadStatus.style.display = 'block';
+      downloadTtsBtn.textContent = 'Voice Downloaded';
+      downloadTtsBtn.disabled = true;
+    } else {
+      ttsDownloadStatus.style.display = 'none';
+      downloadTtsBtn.textContent = 'Download Voice';
+      downloadTtsBtn.disabled = false;
+    }
+  } catch (error) {
+    console.error('Failed to check voice status:', error);
+  }
+}
+
+function initVoiceSelector() {
+  if (!ttsOptions) return;
+
+  const container = document.createElement('div');
+  container.style.marginBottom = '10px';
+  container.style.display = 'flex';
+  container.style.alignItems = 'center';
+  container.style.gap = '10px';
+
+  const label = document.createElement('label');
+  label.textContent = 'Voice:';
+  
+  voiceSelect = document.createElement('select');
+  voiceSelect.style.flex = '1';
+  voiceSelect.className = 'voice-select'; // For potential styling
+  voiceSelect.addEventListener('change', checkVoiceStatus);
+
+  // Common Piper voices
+  const voices = [
+    { id: 'en_US-amy-medium', name: 'Amy (Female)' },
+    { id: 'en_US-kathleen-low', name: 'Kathleen (Female)' },
+    { id: 'en_US-lessac-medium', name: 'Lessac (Female)' },
+    { id: 'en_US-libritts-high', name: 'LibriTTS (Male)' },
+    { id: 'en_US-ryan-medium', name: 'Ryan (Male)' }
+  ];
+
+  voices.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.id;
+    opt.textContent = v.name;
+    voiceSelect.appendChild(opt);
+  });
+
+  container.appendChild(label);
+  container.appendChild(voiceSelect);
+
+  // Insert at the top of ttsOptions
+  if (ttsOptions.firstChild) {
+    ttsOptions.insertBefore(container, ttsOptions.firstChild);
+  } else {
+    ttsOptions.appendChild(container);
+  }
+}
+
 // Default URLs for each provider
 const PROVIDER_DEFAULTS: Record<string, { url: string; model: string }> = {
   LMStudio: { url: 'http://localhost:1234/v1', model: 'default' },
@@ -120,7 +189,8 @@ downloadTtsBtn.addEventListener('click', async () => {
   ttsDownloadStatus.style.display = 'block';
 
   try {
-    await invoke('download_tts_model');
+    const voice = voiceSelect ? voiceSelect.value : 'en_US-amy-medium';
+    await invoke('download_tts_model', { voice });
     ttsDownloadStatus.textContent = 'Voice model ready!';
     ttsDownloadStatus.className = 'progress-status success';
     downloadTtsBtn.textContent = 'Voice Downloaded';
@@ -139,7 +209,8 @@ testTtsBtn.addEventListener('click', async () => {
   ttsDownloadStatus.style.display = 'block';
 
   try {
-    await invoke('speak_text', { text: "Hi! I'm Clippy, your helpful assistant!" });
+    const voice = voiceSelect ? voiceSelect.value : 'en_US-amy-medium';
+    await invoke('preview_voice', { text: "Hi! I'm Clippy, your helpful assistant!", voice });
     ttsDownloadStatus.textContent = 'Voice test complete!';
     ttsDownloadStatus.className = 'progress-status success';
   } catch (error) {
@@ -176,23 +247,14 @@ async function loadConfig() {
     tempSlider.value = String(config.temperature ?? 0.9);
     tempValue.textContent = tempSlider.value;
     ttsEnabledCheckbox.checked = config.tts_enabled || false;
+    if (config.tts_voice && voiceSelect) {
+      voiceSelect.value = config.tts_voice;
+    }
 
     updateProviderSections();
     ttsOptions.style.display = ttsEnabledCheckbox.checked ? '' : 'none';
 
-    // Check if TTS is already initialized (voice already downloaded)
-    try {
-      const initialized = await invoke('is_tts_initialized') as boolean;
-      if (initialized) {
-        ttsDownloadStatus.textContent = 'Voice model ready!';
-        ttsDownloadStatus.className = 'progress-status success';
-        ttsDownloadStatus.style.display = 'block';
-        downloadTtsBtn.textContent = 'Voice Downloaded';
-        downloadTtsBtn.disabled = true;
-      }
-    } catch {
-      // Ignore
-    }
+    await checkVoiceStatus();
   } catch (error) {
     showStatus('Failed to load settings', 'error');
   }
@@ -226,7 +288,7 @@ saveBtn.addEventListener('click', async () => {
       builtin_model_path: builtinModelPath.value.trim() || null,
       temperature: parseFloat(tempSlider.value),
       tts_enabled: ttsEnabledCheckbox.checked,
-      tts_voice: null,
+      tts_voice: voiceSelect ? voiceSelect.value : null,
     };
     await invoke('save_config', { config });
     showStatus('Settings saved! Clippy is ready to chat.', 'success');
@@ -257,5 +319,6 @@ function showStatus(text: string, type: 'success' | 'error') {
   statusEl.className = `status ${type}`;
 }
 
-// Load on init
+// Init
+initVoiceSelector();
 loadConfig();

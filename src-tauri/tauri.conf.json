@@ -17,17 +17,19 @@
         "label": "clippy",
         "url": "index.html",
         "width": 420,
-        "height": 600,
+        "height": 420,
         "resizable": false,
         "fullscreen": false,
         "decorations": false,
         "transparent": true,
+        "shadow": false,
         "alwaysOnTop": true,
-        "skipTaskbar": false,
+        "skipTaskbar": true,
         "visible": true,
-        "center": false,
-        "x": 1000,
-        "y": 100
+        "center": true,
+        "contentProtected": false,
+        "hiddenTitle": true,
+        "titleBarStyle": "Overlay"
       }
     ],
     "security": {

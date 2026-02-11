@@ -177,10 +177,44 @@ pub fn get_config() -> Result<Config, String> {
 }
 
 #[tauri::command]
-pub fn save_config(config: Config) -> Result<(), String> {
+pub async fn save_config(
+    config: Config,
+    tts_state: State<'_, TtsState>,
+) -> Result<(), String> {
+    tracing::info!("save_config called. Voice in config: {:?}", config.tts_voice);
+
     config
         .save()
-        .map_err(|e| format!("Failed to save config: {}", e))
+        .map_err(|e| format!("Failed to save config: {}", e))?;
+
+    // Reload TTS engine if enabled and voice is ready
+    if config.tts_enabled {
+        if let Some(voice) = &config.tts_voice {
+            if crate::tts::voice_ready(voice) {
+                let config_path = crate::tts::voice_config(voice)
+                    .map_err(|e| format!("Failed to get voice config path: {}", e))?;
+
+                let engine = tokio::task::spawn_blocking(move || {
+                    crate::tts::PiperTTSEngine::new(&config_path, None)
+                })
+                .await
+                .map_err(|e| format!("TTS reload task failed: {}", e))?
+                .map_err(|e| format!("Failed to reload TTS: {}", e))?;
+
+                let mut guard = tts_state.0.lock().map_err(|e| format!("TTS lock error: {}", e))?;
+                *guard = Some(std::sync::Arc::new(engine));
+                tracing::info!("TTS engine reloaded with voice: {}", voice);
+            } else {
+                tracing::warn!("Voice '{}' is not ready/downloaded. Skipping TTS reload.", voice);
+            }
+        }
+    } else {
+        // Unload TTS if disabled
+        let mut guard = tts_state.0.lock().map_err(|e| format!("TTS lock error: {}", e))?;
+        *guard = None;
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -275,6 +309,34 @@ pub async fn speak_text(
 }
 
 #[tauri::command]
+pub async fn preview_voice(text: String, voice: String) -> Result<(), String> {
+    tracing::info!("preview_voice called: \"{}\" with voice \"{}\"", text, voice);
+
+    if !crate::tts::voice_ready(&voice) {
+        return Err(format!("Voice '{}' is not downloaded. Please download it first.", voice));
+    }
+
+    let config_path = crate::tts::voice_config(&voice)
+        .map_err(|e| format!("Failed to get voice config: {}", e))?;
+
+    // Load a temporary engine for this preview
+    let engine = tokio::task::spawn_blocking(move || {
+        crate::tts::PiperTTSEngine::new(&config_path, None)
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
+    .map_err(|e| format!("Failed to load voice model: {}", e))?;
+
+    // Speak synchronously (blocking the task, not the async runtime)
+    tokio::task::spawn_blocking(move || engine.speak(&text))
+        .await
+        .map_err(|e| format!("TTS task error: {}", e))?
+        .map_err(|e| format!("TTS error: {}", e))?;
+
+    Ok(())
+}
+
+#[tauri::command]
 pub fn is_tts_initialized(tts_state: State<'_, TtsState>) -> bool {
     tts_state
         .0
@@ -284,7 +346,14 @@ pub fn is_tts_initialized(tts_state: State<'_, TtsState>) -> bool {
 }
 
 #[tauri::command]
-pub async fn download_tts_model(app: AppHandle) -> Result<(), String> {
+pub fn is_voice_downloaded(voice: String) -> bool {
+    crate::tts::voice_ready(&voice)
+}
+
+#[tauri::command]
+pub async fn download_tts_model(app: AppHandle, voice: String) -> Result<(), String> {
+    tracing::info!("download_tts_model called with voice: '{}'", voice);
+
     let _ = app.emit(
         "model-download-progress",
         DownloadProgressEvent {
@@ -304,8 +373,9 @@ pub async fn download_tts_model(app: AppHandle) -> Result<(), String> {
         },
     );
 
+    let voice_id = voice.clone();
     let config_path = tokio::task::spawn_blocking(move || {
-        crate::tts::download_voice("en_US-amy-medium", &data_dir)
+        crate::tts::download_voice(&voice_id, &data_dir)
     })
     .await
     .map_err(|e| format!("Download task failed: {}", e))?

@@ -36,8 +36,14 @@ pub fn run() {
             // Auto-initialize Piper TTS if voice model is already downloaded
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                if tts::default_voice_ready() {
-                    if let Ok(config_path) = tts::default_voice_config() {
+                // Get configured voice or fallback to default
+                let voice = crate::config::Config::load()
+                    .ok()
+                    .and_then(|c| c.tts_voice)
+                    .unwrap_or_else(|| "en_US-amy-medium".to_string());
+
+                if tts::voice_ready(&voice) {
+                    if let Ok(config_path) = tts::voice_config(&voice) {
                         match tokio::task::spawn_blocking(move || {
                             tts::PiperTTSEngine::new(&config_path, None)
                         })
@@ -76,7 +82,9 @@ pub fn run() {
             commands::download_model,
             commands::download_tts_model,
             commands::speak_text,
+            commands::preview_voice,
             commands::is_tts_initialized,
+            commands::is_voice_downloaded,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -68,6 +68,10 @@ impl PiperTTSEngine {
             return Ok(());
         }
 
+        // Append 250ms of silence to prevent the audio from being cut off too early
+        let silence_samples = (self.sample_rate as f32 * 0.25) as usize;
+        samples.extend(std::iter::repeat(0.0f32).take(silence_samples));
+
         info!(
             "Piper TTS: synthesized {} samples ({:.1}s at {} Hz), playing...",
             samples.len(),
@@ -118,12 +122,32 @@ pub fn default_voice_ready() -> bool {
     }
 }
 
+/// Check if a specific voice model is ready.
+pub fn voice_ready(voice_name: &str) -> bool {
+    if let Ok(dir) = voices_dir() {
+        let config = dir
+            .join(voice_name)
+            .join(format!("{}.onnx.json", voice_name));
+        config.exists()
+    } else {
+        false
+    }
+}
+
 /// Get the config path for the default voice model.
 pub fn default_voice_config() -> Result<PathBuf> {
     let dir = voices_dir()?;
     Ok(dir
         .join(DEFAULT_VOICE_MODEL)
         .join(format!("{}.onnx.json", DEFAULT_VOICE_MODEL)))
+}
+
+/// Get the config path for a specific voice model.
+pub fn voice_config(voice_name: &str) -> Result<PathBuf> {
+    let dir = voices_dir()?;
+    Ok(dir
+        .join(voice_name)
+        .join(format!("{}.onnx.json", voice_name)))
 }
 
 /// Download a Piper voice model from HuggingFace.
