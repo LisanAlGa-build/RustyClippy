@@ -46,6 +46,7 @@ jobs:
             libasound2-dev \
             libfuse-dev \
             pkg-config
+      
       - name: install dependencies (windows only)
         if: matrix.platform == 'windows-latest'
         run: choco install nsis -y
@@ -65,20 +66,18 @@ jobs:
 
       - name: Set CARGO_TARGET_DIR (macOS)
         if: contains(matrix.platform, 'macos')
-        run: echo "CARGO_TARGET_DIR=${{ runner.temp }}/target" >> $GITHUB_ENV
-
+        run: |
+          echo "CARGO_TARGET_DIR=${{ runner.temp }}/target" >> $GITHUB_ENV
+          # Ensure C++ standard library compilation uses correct deployment target
+          echo "LDFLAGS=-mmacosx-version-min=11.0" >> $GITHUB_ENV
+          echo "CFLAGS=-mmacosx-version-min=11.0" >> $GITHUB_ENV
+          echo "CXXFLAGS=-mmacosx-version-min=11.0 -std=c++17" >> $GITHUB_ENV
+          echo "CMAKE_OSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
       - uses: tauri-apps/tauri-action@v0.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MACOSX_DEPLOYMENT_TARGET: '11.0'
-          # Ensure C++ standard library compilation uses correct deployment target
-          LDFLAGS: '-mmacosx-version-min=11.0'
-          CFLAGS: '-mmacosx-version-min=11.0'
-          CXXFLAGS: '-mmacosx-version-min=11.0 -std=c++17'
-          #CMAKE_BUILD_PARALLEL_LEVEL: '4'  # CMAKE compatibility
-          CMAKE_VERBOSE_MAKEFILE: 'ON'  
-          # CMake needs to know the deployment target
-          CMAKE_OSX_DEPLOYMENT_TARGET: '11.0'
+          CMAKE_VERBOSE_MAKEFILE: 'ON'
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Rusty Clippy ${{ github.ref_name }}'
