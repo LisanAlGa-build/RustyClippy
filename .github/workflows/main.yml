@@ -33,8 +33,12 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev libfuse-dev
 
+      - name: install dependencies (windows only)
+        if: matrix.platform == 'windows-latest'
+        run: choco install nsis -y
+      
       - name: setup node
         uses: actions/setup-node@v4
         with:
@@ -43,7 +47,7 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || matrix.platform == 'macos-13' && 'x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin' || matrix.platform == 'macos-15-intel' && 'x86_64-apple-darwin' || '' }}
 
       - name: install frontend dependencies
         run: npm install
@@ -52,6 +56,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MACOSX_DEPLOYMENT_TARGET: '11.0'
+          # Ensure C++ standard library compilation uses correct deployment target
+          LDFLAGS: '-mmacosx-version-min=11.0'
+          CFLAGS: '-mmacosx-version-min=11.0'
+          CXXFLAGS: '-mmacosx-version-min=11.0 -std=c++17'
+          # CMake needs to know the deployment target
+          CMAKE_OSX_DEPLOYMENT_TARGET: '11.0'
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Rusty Clippy ${{ github.ref_name }}'
