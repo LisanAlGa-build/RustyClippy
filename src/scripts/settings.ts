@@ -237,7 +237,7 @@ async function loadConfig() {
   try {
     const config = await invoke('get_config') as any;
 
-    providerSelect.value = config.llm_provider || 'OpenAI';
+    providerSelect.value = config.llm_provider || 'BuiltIn';
     apiKeyInput.value = config.openai_api_key || '';
     modelSelect.value = config.openai_model || 'gpt-4';
     customApiUrl.value = config.custom_api_url || '';

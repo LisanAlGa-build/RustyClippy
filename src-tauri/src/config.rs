@@ -13,7 +13,7 @@ pub enum LlmProviderType {
 
 impl Default for LlmProviderType {
     fn default() -> Self {
-        Self::OpenAI
+        Self::BuiltIn
     }
 }
 
@@ -51,7 +51,7 @@ fn default_temperature() -> f32 {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            llm_provider: LlmProviderType::OpenAI,
+            llm_provider: LlmProviderType::BuiltIn,
             openai_api_key: None,
             openai_model: default_openai_model(),
             custom_api_url: None,
